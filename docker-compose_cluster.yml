@@ -21,8 +21,6 @@ services:
         published: 18080
         protocol: tcp
         mode: host
-    networks:
-      - cluster-net
     volumes:
       # - "./data:/home/big_data/data" # Your data
       - hdfs-master-data:/home/hadoop/data/nameNode
@@ -50,8 +48,20 @@ services:
           - node.labels.role==worker
       # Deploy N containers for this service
       replicas: 3
-    networks:
-      - cluster-net
+
+  # Jupyter Notebook
+  jupyter:
+    image: "jupyter/pyspark-notebook"
+    #command: bash -c "start-notebook.sh --NotebookApp.password='argon2:$argon2id$v=19$m=10240,t=10,p=8$JdAN3fe9J45NvK/EPuGCvA$O/tbxglbwRpOFuBNTYrymAEH6370Q2z+eS1eF4GM6Do'"
+    ports:
+      - 10000:8888
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        # Set node labels using `docker node update --label-add role=master <NODE ID>` from swarm manager
+        constraints:
+          - node.labels.role==master
 
 volumes:
   hdfs-master-data:
@@ -63,9 +73,3 @@ volumes:
   hdfs-worker-data:
     external: true
     name: 'hdsf_worker_data_swarm'
-
-# Uses cluster-net network
-networks:
-  cluster-net:
-    external: true
-    name: cluster_net_swarm
